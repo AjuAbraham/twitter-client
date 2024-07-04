@@ -1,73 +1,96 @@
 import { CredentialResponse, GoogleLogin } from "@react-oauth/google";
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import toast from "react-hot-toast";
-import { FaRegEnvelope, FaXTwitter } from "react-icons/fa6";
+import { FaRegEnvelope, FaRegImage, FaXTwitter } from "react-icons/fa6";
 import { FiUser } from "react-icons/fi";
 import { GrHomeRounded, GrNotification } from "react-icons/gr";
 import { IoBookmarkOutline, IoSearch } from "react-icons/io5";
 import { SlOptions } from "react-icons/sl";
 import { graphQlClient } from "../../../../constants/api";
 import { verifyUserGoogleTokenQuery } from "../../../../graphql/query/user";
+import { RxCross2 } from "react-icons/rx";
 import { useCurrentUser } from "../../../../hooks/user";
 import { useQueryClient } from "@tanstack/react-query";
 import { IoSendSharp } from "react-icons/io5";
 import Image from "next/image";
 import Link from "next/link";
+import PostModel from "./PostModel";
+import { useCreateTweet } from "../../../../hooks/tweet";
 interface TwitterProp {
   children: React.ReactNode;
 }
 interface sideBarButton {
   title: string;
   icon: React.ReactNode;
-  link: string
+  link: string;
 }
 const TwitterLayout: React.FC<TwitterProp> = (props) => {
   const queryClient = useQueryClient();
   const { user } = useCurrentUser();
+  const [isOpen, setIsOpen] = useState(false);
+  const { mutate } = useCreateTweet();
+  const [content, setContent] = useState("");
+  const handleImageInput = useCallback(() => {
+    const input = document.createElement("input");
+    input.setAttribute("type", "file");
+    input.setAttribute("accept", "image/*");
+    input.click();
+  }, []);
 
-  const sideBarMenuItems: sideBarButton[] = useMemo(()=>[
-    {
-      title: "Home",
-      icon: <GrHomeRounded />,
-      link : "/"
-    },
-    {
-      title: "Explore",
-      icon: <IoSearch />,
-      link : "/"
-    },
-    {
-      title: "Notifications",
-      icon: <GrNotification />,
-      link : "/"
-    },
-    {
-      title: "Messages",
-      icon: <FaRegEnvelope />,
-      link : "/"
-    },
-    {
-      title: "Bookmark",
-      icon: <IoBookmarkOutline />,
-      link : "/"
-    },
-    {
-      title: "Premium",
-      icon: <FaXTwitter />,
-      link : "/"
-    },
+  const handleTweet = useCallback(() => {
+    content===""? toast.error("Content is Empty"):
+    mutate({
+      content,
+    });
+    setContent("");
+  }, [content, mutate]);
 
-    {
-      title: "Profile",
-      icon: <FiUser />,
-      link : `/${user?.id}`
-    },
-    {
-      title: "More",
-      icon: <SlOptions />,
-      link : "/"
-    },
-  ],[user?.id])
+  const sideBarMenuItems: sideBarButton[] = useMemo(
+    () => [
+      {
+        title: "Home",
+        icon: <GrHomeRounded />,
+        link: "/",
+      },
+      {
+        title: "Explore",
+        icon: <IoSearch />,
+        link: "/",
+      },
+      {
+        title: "Notifications",
+        icon: <GrNotification />,
+        link: "/",
+      },
+      {
+        title: "Messages",
+        icon: <FaRegEnvelope />,
+        link: "/",
+      },
+      {
+        title: "Bookmark",
+        icon: <IoBookmarkOutline />,
+        link: "/",
+      },
+      {
+        title: "Premium",
+        icon: <FaXTwitter />,
+        link: "/",
+      },
+
+      {
+        title: "Profile",
+        icon: <FiUser />,
+        link: `/${user?.id}`,
+      },
+      {
+        title: "More",
+        icon: <SlOptions />,
+        link: "/",
+      },
+    ],
+    [user?.id]
+  );
   const handleLoginWithGoogle = useCallback(
     async (credentials: CredentialResponse) => {
       const googleToken = credentials.credential;
@@ -96,20 +119,66 @@ const TwitterLayout: React.FC<TwitterProp> = (props) => {
           <div className="mt-4   md:text-md pr-4">
             <ul>
               {sideBarMenuItems.map((item) => (
-                <li
-                  key={item.title}
-                >
-                  <Link href={item.link} className="flex gap-4 justify-start items-center hover:bg-slate-800 transition-all rounded-full w-fit px-3 py-2 cursor-pointer mt-2">
-                  <span className="md:text-2xl text-xl">{item.icon}</span>
-                  <span className="hidden lg:block">{item.title}</span>
+                <li key={item.title}>
+                  <Link
+                    href={item.link}
+                    className="flex gap-4 justify-start items-center hover:bg-slate-800 transition-all rounded-full w-fit px-3 py-2 cursor-pointer mt-2"
+                  >
+                    <span className="md:text-2xl text-xl">{item.icon}</span>
+                    <span className="hidden lg:block">{item.title}</span>
                   </Link>
                 </li>
               ))}
             </ul>
-            <button className="bg-[#1c9bf1] hidden lg:block p-2 mt-4 w-full rounded-full text-lg font-semibold  hover:bg-[#1c9cf1c7]  transition-all">
+            {isOpen && (
+              <PostModel isOpen handleClose={() => setIsOpen(!isOpen)}>
+            <div className="text-white cursor-pointer text-2xl p-4" onClick={()=>setIsOpen(!isOpen)}><RxCross2 /></div>
+            <div className="grid grid-cols-12 p-3">
+              <div className="col-span-1 min-w-10">
+                {user?.avatarUrl && (
+                  <Image
+                    src={user?.avatarUrl}
+                    alt="profile-img"
+                    width={30}
+                    className="rounded-full"
+                    height={30}
+                  />
+                )}
+              </div>
+              <div className="col-span-11">
+                <textarea
+                  className="bg-transparent text-white w-full text-md md:text-xl mx-1 outline-none "
+                  rows={4}
+                  placeholder="What's Happening?!!"
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="flex justify-between items-center mt-[-15px] border-slate-800 px-4 pt-2 border-t">
+                  <FaRegImage
+                    className="text-lg cursor-pointer text-[#1470ad]"
+                    onClick={handleImageInput}
+                  />
+                  <button
+                    onClick={handleTweet}
+                    className={` px-4 py-2 rounded-full text-sm font-medium  hover:bg-[#1c9cf1c7]  transition-all ${content===""?"bg-[#0f4e78] text-[#989898]":"bg-[#1c9bf1]"} `}
+                  >
+                    Tweet
+                  </button>
+                </div>
+              </PostModel>
+            )}
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className="bg-[#1c9bf1] hidden lg:block p-2 mt-4 w-full rounded-full text-lg font-semibold  hover:bg-[#1c9cf1c7]  transition-all"
+            >
               Post
             </button>
-            <button className="bg-[#1c9bf1]  lg:hidden md:p-4 px-3 py-3  mt-5 rounded-full text-lg font-semibold  hover:bg-[#1c9cf1c7]  transition-all">
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className="bg-[#1c9bf1]  lg:hidden md:p-4 px-3 py-3  mt-5 rounded-full text-lg font-semibold  hover:bg-[#1c9cf1c7]  transition-all"
+            >
               <IoSendSharp />
             </button>
           </div>

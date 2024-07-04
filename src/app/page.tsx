@@ -22,10 +22,11 @@ export default function Home() {
   }, []);
 
   const handleTweet = useCallback(() => {
-    content===""? toast.error("Content is Empty"):
-    mutate({
-      content,
-    });
+    content === ""
+      ? toast.error("Content is Empty")
+      : mutate({
+          content,
+        });
     setContent("");
   }, [content, mutate]);
   return (
@@ -60,7 +61,11 @@ export default function Home() {
                   />
                   <button
                     onClick={handleTweet}
-                    className={` px-4 py-2 rounded-full text-sm font-medium  hover:bg-[#1c9cf1c7]  transition-all ${content===""?"bg-[#0f4e78] text-[#989898]":"bg-[#1c9bf1]"} `}
+                    className={` px-4 py-2 rounded-full text-sm font-medium  hover:bg-[#1c9cf1c7]  transition-all ${
+                      content === ""
+                        ? "bg-[#0f4e78] text-[#989898]"
+                        : "bg-[#1c9bf1]"
+                    } `}
                   >
                     Tweet
                   </button>
