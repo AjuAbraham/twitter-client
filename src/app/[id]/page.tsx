@@ -9,10 +9,25 @@ import { useGetUserById } from "../../../hooks/user";
 import { Tweet } from "../../../gql/graphql";
 import  Link from 'next/link'
 
+
+
 const UserProfile: NextPage = () => {
+
   const {id} = useParams();
   const userId = Array.isArray(id) ? id[0] : id;
-  const {user} = useGetUserById(userId);
+  const {user,isRefetching,isLoading} = useGetUserById(userId);
+ 
+  if(isRefetching||isLoading){
+    return (
+      <TwitterLayout>
+        <div className="flex items-center justify-center h-screen">
+         <div className="border-t-2 text-black rounded-l-full rounded-r-full w-20 h-20 animate-spin">
+             1
+         </div>
+        </div>
+      </TwitterLayout>
+    );
+  }
   return (
     <div>
       <TwitterLayout>

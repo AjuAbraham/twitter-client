@@ -27,12 +27,10 @@ const PostModel = ({children,isOpen,handleClose}:ModelConfig) => {
     <ReactPortal wrapperId='react-portal-post'>
     <>
     <div className='fixed top-0 left-0 w-screen h-screen z-40 bg-[#252d35] opacity-50'/>
-    <div className='fixed md:top-[8%] lg:left-[35%] md:left-[15%]  top-0 left-0 w-screen h-screen bg-[#000101] md:w-[560px] md:h-[250px] rounded-3xl z-50 overflow-hidden'>
+    <div className='fixed md:top-[8%] lg:left-[35%] md:left-[15%]  top-0 left-0  bg-[#000101] md:w-[560px]  rounded-3xl z-50 h-fit '>
     {children}
       </div>
-      <div className='fixed rounded flex flex-col box-border min-w-fit overflow-hidden p-5'>
-     
-     </div>
+      
     </>
     </ReactPortal>
   )

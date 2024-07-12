@@ -14,6 +14,9 @@ export const useGetUserById = (id: string) => {
   const query = useQuery({
     queryKey: ["get-user"],
     queryFn: () => graphQlClient.request(getUserByIdQuery, {id:id }),
+    refetchOnWindowFocus:false,
+    refetchOnReconnect:false,
+    retry:false
   });
   return { ...query, user: query.data?.getUserById };
 };

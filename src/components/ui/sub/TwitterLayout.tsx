@@ -16,6 +16,8 @@ import Image from "next/image";
 import Link from "next/link";
 import PostModel from "./PostModel";
 import { useCreateTweet } from "../../../../hooks/tweet";
+import { getSignedUrlForTweetQuery } from "../../../../graphql/query/tweet";
+import axios from "axios";
 interface TwitterProp {
   children: React.ReactNode;
 }
@@ -30,20 +32,56 @@ const TwitterLayout: React.FC<TwitterProp> = (props) => {
   const [isOpen, setIsOpen] = useState(false);
   const { mutate } = useCreateTweet();
   const [content, setContent] = useState("");
+  const [imgUrl, setImgUrl] = useState("");
+  
+  const handleInputChangeFile = useCallback((input: HTMLInputElement) => {
+    return async (e: Event) => {
+      e.preventDefault();
+      const file:File|null|undefined = input.files?.item(0); 
+      if (!file) return;
+      const { getSignedUrlForTweet } = await graphQlClient.request(
+        getSignedUrlForTweetQuery,
+        { imageType: file.type, imageName: file.name, size: file.size }
+      );
+      if (getSignedUrlForTweet) {
+        toast.loading("Uploading...", { id: "upload" });
+        await axios.put(getSignedUrlForTweet, file, {
+          headers: { "Content-Type": file.type },
+        });
+        toast.success("Upload Complete", { id: "upload" });
+        const url = new URL(getSignedUrlForTweet);
+        const filePath = `${url.origin}${url.pathname}`;
+        setImgUrl(filePath);
+      }
+    };
+  }, []);
   const handleImageInput = useCallback(() => {
     const input = document.createElement("input");
     input.setAttribute("type", "file");
-    input.setAttribute("accept", "image/*");
+    input.setAttribute("accept", "image/*,video/mp4");
+    const handler = handleInputChangeFile(input);
+    input.addEventListener("change", handler);
     input.click();
-  }, []);
+  }, [handleInputChangeFile]);
 
   const handleTweet = useCallback(() => {
-    content===""? toast.error("Content is Empty"):
-    mutate({
-      content,
-    });
+    content === ""
+      ? toast.error("Content is Empty")
+      : mutate(
+          {
+            content,
+            contentImage: imgUrl,
+          },
+          {
+            onError: (error) => {
+              console.log(error);
+              toast.error("Failed to post tweet");
+            },
+          }
+        );
     setContent("");
-  }, [content, mutate]);
+    setImgUrl("");
+  }, [content, mutate, imgUrl]);
 
   const sideBarMenuItems: sideBarButton[] = useMemo(
     () => [
@@ -153,9 +191,13 @@ const TwitterLayout: React.FC<TwitterProp> = (props) => {
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
                 />
+                <div className="mb-4 p-2 md:ml-6">
+                {imgUrl && (imgUrl.endsWith("image")?<Image src={imgUrl} alt="Posted Image" width={300} height={300}/>:imgUrl&&<video src={imgUrl} controls/>)}
+                </div>
+
               </div>
             </div>
-            <div className="flex justify-between items-center mt-[-15px] border-slate-800 px-4 pt-2 border-t">
+            <div className="flex justify-between items-center mt-[-15px] border-slate-800 px-4 pt-2 border-t mb-4">
                   <FaRegImage
                     className="text-lg cursor-pointer text-[#1470ad]"
                     onClick={handleImageInput}
